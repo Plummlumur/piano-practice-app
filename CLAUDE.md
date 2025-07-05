@@ -10,7 +10,7 @@ This is a piano practice tracking application built with:
 - **Tailwind CSS** for styling
 - **Lucide React** for icons
 
-The main application is in `piano-practice-app/` with the root having shared dependencies.
+The application is structured as a standard Next.js project in the root directory.
 
 ## Database Schema
 
@@ -25,8 +25,6 @@ Key relationships:
 - The schema uses junction tables for complex many-to-many relationships
 
 ## Development Commands
-
-Navigate to `piano-practice-app/` for all commands:
 
 ```bash
 # Development
@@ -53,7 +51,7 @@ All API routes use Prisma for database operations with proper error handling and
 ## Key Files
 
 - `prisma/schema.prisma` - Database schema with enums and relationships
-- `piano-practice-app/api.ts` - Client-side API functions
+- `api.ts` - Client-side API functions
 - `app/api/*/route.ts` - Server-side API route handlers
 - `app/layout.tsx` - Root layout with Geist font configuration
 
