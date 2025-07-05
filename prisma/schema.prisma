@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Piece {
+  id        Int      @id @default(autoincrement())
+  name      String
+  composer  String
+  work      String?
+  source    String?
+  status    Status   @default(TRAINING)
+  playCount Int      @default(0)
+  dateAdded DateTime @default(now())
+  lastPlayed DateTime?
+  
+  trainingSessionsNew PieceOnTrainingSessionNew[]
+  trainingSessionsRepertoire PieceOnTrainingSessionRepertoire[]
+  
+  @@map("pieces")
+}
+
+model Exercise {
+  id           Int      @id @default(autoincrement())
+  name         String
+  lastPracticed DateTime?
+  
+  trainingSessions ExerciseOnTrainingSession[]
+  
+  @@map("exercises")
+}
+
+model TrainingSession {
+  id       Int      @id @default(autoincrement())
+  date     DateTime
+  duration Int      // in minutes
+  status   SessionStatus @default(COMPLETED)
+  createdAt DateTime @default(now())
+  
+  exercises ExerciseOnTrainingSession[]
+  newPieces PieceOnTrainingSessionNew[]
+  repertoirePieces PieceOnTrainingSessionRepertoire[]
+  
+  @@map("training_sessions")
+}
+
+// Junction Tables
+model ExerciseOnTrainingSession {
+  exerciseId        Int
+  trainingSessionId Int
+  
+  exercise        Exercise        @relation(fields: [exerciseId], references: [id])
+  trainingSession TrainingSession @relation(fields: [trainingSessionId], references: [id])
+  
+  @@id([exerciseId, trainingSessionId])
+  @@map("exercise_training_sessions")
+}
+
+model PieceOnTrainingSessionNew {
+  pieceId           Int
+  trainingSessionId Int
+  
+  piece           Piece           @relation(fields: [pieceId], references: [id])
+  trainingSession TrainingSession @relation(fields: [trainingSessionId], references: [id])
+  
+  @@id([pieceId, trainingSessionId])
+  @@map("piece_training_sessions_new")
+}
+
+model PieceOnTrainingSessionRepertoire {
+  pieceId           Int
+  trainingSessionId Int
+  
+  piece           Piece           @relation(fields: [pieceId], references: [id])
+  trainingSession TrainingSession @relation(fields: [trainingSessionId], references: [id])
+  
+  @@id([pieceId, trainingSessionId])
+  @@map("piece_training_sessions_repertoire")
+}
+
+enum Status {
+  TRAINING     @map("Im Training")
+  REPERTOIRE   @map("Repertoire")
+}
+
+enum SessionStatus {
+  PLANNED
+  COMPLETED
+}

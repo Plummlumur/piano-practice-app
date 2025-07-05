@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@prisma/client": "^6.11.1",
+    "lucide-react": "^0.525.0",
+    "prisma": "^6.11.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.10"
+  }
+}
