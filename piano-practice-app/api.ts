@@ -1,47 +1,69 @@
-export async function fetchPieces() {
-  const response = await fetch('/api/pieces');
-  if (!response.ok) throw new Error('Failed to fetch pieces');
+import {
+  PieceResponse,
+  ExerciseResponse,
+  TrainingSessionResponse,
+  CreatePieceRequest,
+  CreateExerciseRequest,
+  CreateTrainingSessionRequest
+} from './lib/types';
+
+export class APIClientError extends Error {
+  constructor(message: string, public status: number, public details?: string) {
+    super(message);
+    this.name = 'APIClientError';
+  }
+}
+
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new APIClientError(
+      errorData.error || `HTTP ${response.status}`,
+      response.status,
+      errorData.details
+    );
+  }
   return response.json();
 }
 
-export async function createPiece(data: any) {
+export async function fetchPieces(): Promise<PieceResponse[]> {
+  const response = await fetch('/api/pieces');
+  return handleResponse<PieceResponse[]>(response);
+}
+
+export async function createPiece(data: CreatePieceRequest): Promise<PieceResponse> {
   const response = await fetch('/api/pieces', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
-  if (!response.ok) throw new Error('Failed to create piece');
-  return response.json();
+  return handleResponse<PieceResponse>(response);
 }
 
-export async function fetchExercises() {
+export async function fetchExercises(): Promise<ExerciseResponse[]> {
   const response = await fetch('/api/exercises');
-  if (!response.ok) throw new Error('Failed to fetch exercises');
-  return response.json();
+  return handleResponse<ExerciseResponse[]>(response);
 }
 
-export async function createExercise(data: any) {
+export async function createExercise(data: CreateExerciseRequest): Promise<ExerciseResponse> {
   const response = await fetch('/api/exercises', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
-  if (!response.ok) throw new Error('Failed to create exercise');
-  return response.json();
+  return handleResponse<ExerciseResponse>(response);
 }
 
-export async function fetchTrainingSessions() {
+export async function fetchTrainingSessions(): Promise<TrainingSessionResponse[]> {
   const response = await fetch('/api/training-sessions');
-  if (!response.ok) throw new Error('Failed to fetch sessions');
-  return response.json();
+  return handleResponse<TrainingSessionResponse[]>(response);
 }
 
-export async function createTrainingSession(data: any) {
+export async function createTrainingSession(data: CreateTrainingSessionRequest): Promise<TrainingSessionResponse> {
   const response = await fetch('/api/training-sessions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
-  if (!response.ok) throw new Error('Failed to create session');
-  return response.json();
+  return handleResponse<TrainingSessionResponse>(response);
 }

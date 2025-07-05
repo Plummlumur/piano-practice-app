@@ -1,33 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { validateCreatePieceRequest } from '@/lib/validation';
+import { PieceResponse, APIError } from '@/lib/types';
 
-const prisma = new PrismaClient();
-
-export async function GET() {
+export async function GET(): Promise<NextResponse<PieceResponse[] | APIError>> {
   try {
     const pieces = await prisma.piece.findMany({
       orderBy: { dateAdded: 'desc' }
     });
     return NextResponse.json(pieces);
   } catch (error) {
+    console.error('Failed to fetch pieces:', error);
     return NextResponse.json({ error: 'Failed to fetch pieces' }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse<PieceResponse | APIError>> {
   try {
-    const data = await request.json();
+    const rawData = await request.json();
+    const validation = validateCreatePieceRequest(rawData);
+    
+    if (!validation.isValid) {
+      return NextResponse.json({ 
+        error: 'Invalid input data', 
+        details: validation.errors.map(e => `${e.field}: ${e.message}`).join(', ')
+      }, { status: 400 });
+    }
+
     const piece = await prisma.piece.create({
       data: {
-        name: data.name,
-        composer: data.composer,
-        work: data.work || null,
-        source: data.source || null,
-        status: data.status || 'TRAINING'
+        name: validation.data!.name,
+        composer: validation.data!.composer,
+        work: validation.data!.work || null,
+        source: validation.data!.source || null,
+        status: validation.data!.status || 'TRAINING'
       }
     });
-    return NextResponse.json(piece);
+
+    return NextResponse.json(piece, { status: 201 });
   } catch (error) {
+    console.error('Failed to create piece:', error);
     return NextResponse.json({ error: 'Failed to create piece' }, { status: 500 });
   }
 }

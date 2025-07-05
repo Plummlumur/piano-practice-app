@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { validateCreateTrainingSessionRequest } from '@/lib/validation';
+import { TrainingSessionResponse, APIError } from '@/lib/types';
 
-const prisma = new PrismaClient();
-
-export async function GET() {
+export async function GET(): Promise<NextResponse<TrainingSessionResponse[] | APIError>> {
   try {
     const sessions = await prisma.trainingSession.findMany({
       include: {
@@ -21,14 +21,45 @@ export async function GET() {
     });
     return NextResponse.json(sessions);
   } catch (error) {
+    console.error('Failed to fetch sessions:', error);
     return NextResponse.json({ error: 'Failed to fetch sessions' }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest): Promise<NextResponse<TrainingSessionResponse | APIError>> {
   try {
-    const data = await request.json();
+    const rawData = await request.json();
+    const validation = validateCreateTrainingSessionRequest(rawData);
     
+    if (!validation.isValid) {
+      return NextResponse.json({ 
+        error: 'Invalid input data', 
+        details: validation.errors.map(e => `${e.field}: ${e.message}`).join(', ')
+      }, { status: 400 });
+    }
+
+    const data = validation.data!;
+
+    // Verify that all referenced exercises and pieces exist
+    const [exerciseCount, pieceCount] = await Promise.all([
+      prisma.exercise.count({ where: { id: { in: data.exercises } } }),
+      prisma.piece.count({ where: { id: { in: [...data.newPieces, ...data.repertoire] } } })
+    ]);
+
+    if (exerciseCount !== data.exercises.length) {
+      return NextResponse.json({ 
+        error: 'Some referenced exercises do not exist' 
+      }, { status: 400 });
+    }
+
+    const totalPieceIds = [...data.newPieces, ...data.repertoire];
+    if (pieceCount !== totalPieceIds.length) {
+      return NextResponse.json({ 
+        error: 'Some referenced pieces do not exist' 
+      }, { status: 400 });
+    }
+
+    // Create the session with all related data
     const session = await prisma.trainingSession.create({
       data: {
         date: new Date(data.date),
@@ -50,13 +81,19 @@ export async function POST(request: NextRequest) {
         }
       },
       include: {
-        exercises: true,
-        newPieces: true,
-        repertoirePieces: true
+        exercises: {
+          include: { exercise: true }
+        },
+        newPieces: {
+          include: { piece: true }
+        },
+        repertoirePieces: {
+          include: { piece: true }
+        }
       }
     });
 
-    // Update last practiced dates
+    // Update last practiced dates for exercises
     if (data.exercises.length > 0) {
       await prisma.exercise.updateMany({
         where: { id: { in: data.exercises } },
@@ -81,8 +118,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json(session);
+    return NextResponse.json(session, { status: 201 });
   } catch (error) {
+    console.error('Failed to create session:', error);
     return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
   }
 }

@@ -83,7 +83,7 @@ model PieceOnTrainingSessionRepertoire {
 }
 
 enum Status {
-  TRAINING     @map("Im Training")
+  TRAINING     @map("In Training")
   REPERTOIRE   @map("Repertoire")
 }
 
