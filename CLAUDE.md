@@ -58,3 +58,12 @@ All API routes use Prisma for database operations with proper error handling and
 ## Environment Setup
 
 Requires `DATABASE_URL` environment variable for PostgreSQL connection.
+
+## Deployment
+
+The application is configured for deployment on Vercel:
+- `postinstall` script automatically generates Prisma client after dependency installation
+- `build` script runs `prisma generate` before Next.js build to ensure fresh client
+- `vercel.json` configures Next.js framework detection
+
+For production deployment, ensure `DATABASE_URL` is set in Vercel environment variables.
