@@ -67,20 +67,3 @@ export async function createTrainingSession(data: CreateTrainingSessionRequest):
   });
   return handleResponse<TrainingSessionResponse>(response);
 }
-
-// Instruments API functions
-export interface InstrumentResponse {
-  id: number;
-  name: string;
-  type?: string;
-  brand?: string;
-  model?: string;
-  acquired_date?: string;
-  notes?: string;
-  created_at: string;
-}
-
-export async function fetchInstruments(): Promise<InstrumentResponse[]> {
-  const response = await fetch('/api/instruments');
-  return handleResponse<InstrumentResponse[]>(response);
-}
